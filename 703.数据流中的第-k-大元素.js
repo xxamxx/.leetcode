@@ -4,27 +4,16 @@
  * [703] 数据流中的第 K 大元素
  */
 // @lc code=start
-function TreeNode(val, left, right) {
-  this.val = (val===undefined ? 0 : val)
-  this.left = (left===undefined ? null : left)
-  this.right = (right===undefined ? null : right)
-}
-
-Object.defineProperty(TreeNode.prototype, 'cnt', {
-  get(){
-    return (this.left ? this.left.cnt : 0) + (this.right ? this.right.cnt : 0) + 1
-  }
-})
 
 /**
 * @param {number} k
 * @param {number[]} nums
 */
 var KthLargest = function(k, nums) {
-  this.k = k
-  this.root = undefined
+  this.k = k;
+  this.heap = new MinHeap();
   
-  nums.forEach(num => this._insert(num))
+  nums.forEach(num => this.add(num));
 }
 
 /** 
@@ -32,67 +21,100 @@ var KthLargest = function(k, nums) {
  * @return {number}
  */
 KthLargest.prototype.add = function(val) {
-  this._insert(val)
-  return this._get(this.k)
+  this.heap.offer(val);
+
+  if (this.heap.size() > this.k){
+    this.heap.poll();
+  }
+
+  return this.heap.peek();
 }
 
-KthLargest.prototype._insert = function(val) {
-  let root = this.root
-  if (!root) {
-    this.root = new TreeNode(val)
-    return
+class MinHeap {
+  constructor(){
+    this.data = [];
+    this.gt = (a, b) => a > b;
+    this.heapify();
+  }
+
+  heapify() {
+    if (this.size() < 2) return;
+
+    for (let i = 1; i < this.size(); i++) {
+      this.bubbleUp(i);
+    }
   }
   
-  while (root) {
-    if (val < root.val) {
-      if (!root.left){
-        root.left = new TreeNode(val)
-        break
-      }
-      
-      root = root.left
+  poll() {
+    if (this.size() === 0) return null;
+
+    const result = this.data[0];
+    const last = this.data.pop();
+
+    if (this.size() !== 0) {
+      this.data[0] = last;
+      this.bubbleDown(0);
     }
-    else if (val == root.val) {
-      const node = new TreeNode(val)
-      node.right = root.right
-      root.right = node
-      break
-    }
-    else {
-      if (!root.right){
-        root.right = new TreeNode(val)
-        break
-      }
-      
-      root = root.right
-    }
+
+    return result;
   }
-}
 
-KthLargest.prototype._get = function(k) {
-  let root = this.root
-  if (!root) return null
+  offer(val) {
+    this.data.push(val);
+    this.bubbleUp(this.size() - 1);
+  }
 
-  while (k > 0) {
-    const right = (root.right ? root.right.cnt : 0)
-
-    // less then and equals right, into right
-    if (k <= right) {
-      root = root.right
-    }
-    // equals current count
-    else if (k == right + 1) {
-      k -= right + 1
-    }
-    // if (k > right + 1) {
-    // other, greater then current count
-    else {
-      k -= right + 1
-      root = root.left
+  bubbleUp(idx) {
+    while (idx > 0) {
+      const parentIdx = (idx - 1) >> 1
+      if (this.gt(this.data[parentIdx], this.data[idx])) {
+        this.swap(idx, parentIdx);
+        idx = parentIdx;
+      }
+      else {
+        break;
+      }
     }
   }
 
-  return root.val
+  bubbleDown(index) {
+    const last = this.size() - 1;
+
+    while (true) {
+      const left = index * 2 + 1;
+      const right = index * 2 + 2;
+      let idx = index;
+      
+      if (left <= last && this.gt(this.data[idx], this.data[left])) {
+        idx = left;
+      }
+
+      if (right <= last && this.gt(this.data[idx], this.data[right])) {
+        idx = right;
+      }
+
+      if (idx !== index){
+        this.swap(index, idx);
+        index = idx;
+      }
+      else {
+        break;
+      }
+    }
+  }
+
+  swap(idx1, idx2){
+    [this.data[idx1], this.data[idx2]] = [this.data[idx2], this.data[idx1]];
+  }
+
+  size() {
+    return this.data.length;
+  }
+
+  peek() {
+    if (this.size() === 0) return null;
+    return this.data[0];
+  }
 }
 
 /**

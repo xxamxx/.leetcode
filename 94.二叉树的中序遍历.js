@@ -14,6 +14,8 @@
  * }
  */
 /**
+ * Morris 遍历算法
+ * 核心是把最大的左子叶绑定到父节点
  * @param {TreeNode} root
  * @return {number[]}
  */
